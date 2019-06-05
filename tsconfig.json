@@ -1,0 +1,28 @@
+{
+    "compilerOptions": {
+        "module": "commonjs",
+        "noImplicitAny": true,
+        "removeComments": true,
+        "preserveConstEnums": true,
+        "sourceMap": true,
+        "alwaysStrict": true,
+        "declaration": true,
+        "declarationMap": true,
+        "experimentalDecorators": true,
+        "emitDecoratorMetadata": true,
+        "incremental": true,
+        "jsx": "react",
+        "lib": [
+            "es2015",
+            "dom",
+            "es5",
+            "es6",
+            "es7",
+            "esnext"
+        ],
+        "outDir": "dist"
+    },
+    "include": [
+        "src/**/*"
+    ]
+}
