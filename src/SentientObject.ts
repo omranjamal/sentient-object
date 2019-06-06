@@ -156,8 +156,6 @@ export const getChanges = (x: AllowedTypes): Array<ChangeInterface> => {
         return changes;
 
     } else if (x.constructor === Array && isSentient(x)) {
-        console.log('HERE');
-
         const mem: ArrayMemory = x[memorySym];
         const changes: ChangeInterface[] = [];
 
