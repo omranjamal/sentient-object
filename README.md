@@ -78,6 +78,26 @@ Output
 ]
 ```
 
+### Discarding Changes
+
+Calling the exported `clearChanges` function on a sentient object will
+discard all changes and simultaneously turn any object in the tree that
+supports sentience into an sentient object.
+
+```Typescript
+import { sentient, getChanges, clearChanges } from 'sentient-object';
+
+const obj = sentient({
+  name: 'Narmo Lamaj'
+});
+
+obj.name = 'Simon Baker';
+
+clearChanges(obj);
+
+console.log(getChanges(obj)); // []
+```
+
 ## Explanation
 
 Every change is an instance of:
