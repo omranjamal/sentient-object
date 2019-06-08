@@ -1,4 +1,4 @@
-import {sentient, getChanges} from '../src/SentientObject';
+import {sentient, getChanges, clearChanges} from '../src/SentientObject';
 
 const test = sentient({
     a: 'Apple',
@@ -41,4 +41,6 @@ obj.contacts.phones.push('01016105529');
 delete obj.age;
 
 
-console.log(getChanges(obj));
+console.log('xxx', getChanges(obj));
+clearChanges(obj);
+console.log('yyy', getChanges(obj));

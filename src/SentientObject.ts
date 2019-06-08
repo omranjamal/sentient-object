@@ -199,4 +199,38 @@ export const getChanges = (x: AllowedTypes): Array<ChangeInterface> => {
     }
 }
 
+export const supportsSentience = (x: AllowedTypes): boolean => {
+    return Array.isArray(x) || x.constructor === Object;
+}
+
+export const clearChanges = (x: AllowedTypes): void => {
+    if (Array.isArray(x) && isSentient(x)) {
+
+        x.forEach((ele, i) => {
+            clearChanges(ele);
+
+            if (supportsSentience(ele) && !isSentient(ele)) {
+                x[i] = sentient(ele);
+            }
+        });
+
+        const mem: ArrayMemory = (<any>x)[memorySym];
+        mem.length = mem.initialLength = x.length;
+        mem.updates = {};
+
+    } else if (x.constructor === Object && isSentient(x)) {
+
+        Object.keys(x).forEach(key => {
+            clearChanges(x[key]);
+
+            if (supportsSentience(x[key]) && !isSentient(x[key])) {
+                x[key] = sentient(x[key]);
+            }
+        });
+
+        (<any>x)[memorySym] = {};
+
+    }
+}
+
 export default sentient;
