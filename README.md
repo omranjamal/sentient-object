@@ -46,9 +46,9 @@ Output
 ```Javascript
 [
   {
-	action: 'update',
-	key: [ 'name' ],
-	value: 'John H. Doe'
+    action: 'update',
+    key: [ 'name' ],
+    value: 'John H. Doe'
   },
   {
     action: 'delete',
