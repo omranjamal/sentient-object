@@ -1,9 +1,20 @@
 {
   "name": "sentient-object",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Objects that know and tell you what changed about itself.",
   "main": "dist/SentientObject.js",
   "repository": "https://github.com/Hedronium/SentientObject",
   "author": "Omran Jamal <o.jamal97@gmail.com>",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^4.8.4"
+  },
+  "dependencies": {
+    "@types/node": "^18.7.23"
+  },
+  "scripts": {
+    "build": "tsc",
+    "build:watch": "tsc --watch",
+    "prepublishOnly": "yarn build"
+  }
 }
