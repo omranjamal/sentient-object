@@ -25,19 +25,18 @@ type ArrayMemory = {
 
 export const sentient = <INPUT extends AllowedTypes>(x: INPUT): INPUT => {
     if (Array.isArray(x)) {
-        x[typeSym] = 'array';
+        const xPrime: (any)[] = x.map((item: any) => sentient(item));
+        (xPrime as any)[typeSym] = 'array';
 
-        x = x.map((item: any) => sentient(item));
-
-        const mem: ArrayMemory = x[memorySym] = {
+        const mem: ArrayMemory = (xPrime as any)[memorySym] = {
             initialLength: x.length,
             length: x.length,
             updates: {}
         };
 
-        return new Proxy((<any>x), {
+        return new Proxy((<any>xPrime), {
             set: (arr: Array<any>, key: number | string, val: any) => {
-                
+
                 if (key === 'length') {
 
                     mem.length = val;
@@ -47,7 +46,7 @@ export const sentient = <INPUT extends AllowedTypes>(x: INPUT): INPUT => {
                 }
 
                 const i: number = <number>key;
-                
+
                 mem.updates[i] = val;
                 arr[i] = val;
 
@@ -63,20 +62,20 @@ export const sentient = <INPUT extends AllowedTypes>(x: INPUT): INPUT => {
 
                 return true;
             }
+        } as any);
+
+    } else if (x !== undefined && x !== null && x?.constructor === Object) {
+        const xPrime: any = {...(x as any)};
+
+        xPrime[typeSym] = 'object';
+
+        const mem: ObjectMemory = xPrime[memorySym] = {};
+
+        Object.keys(xPrime).forEach(key => {
+            xPrime[key] = sentient((x as any)[key]);
         });
 
-    } else if (x.constructor === Object) {
-        x = {...x};
-
-        x[typeSym] = 'object';
-
-        const mem: ObjectMemory = x[memorySym] = {};
-
-        Object.keys(x).forEach(key => {
-            x[key] = sentient(x[key]);
-        });
-
-        return new Proxy((<any>x), {
+        return new Proxy(xPrime as any, {
             set: (obj: AllowedObject, key: string, val: any) => {
                 if (key in obj || key in mem) {
                     if (obj[key] !== val) {
@@ -109,8 +108,7 @@ export const sentient = <INPUT extends AllowedTypes>(x: INPUT): INPUT => {
 
                 return true;
             }
-        });
-
+        } as any);
     } else {
         return x;
     }
@@ -156,7 +154,7 @@ export const getChanges = (x: AllowedTypes): Array<ChangeInterface> => {
         return changes;
 
     } else if (x.constructor === Array && isSentient(x)) {
-        const mem: ArrayMemory = x[memorySym];
+        const mem: ArrayMemory = (x as any)[memorySym];
         const changes: ChangeInterface[] = [];
 
         if (mem.initialLength > mem.length) {
@@ -200,7 +198,7 @@ export const getChanges = (x: AllowedTypes): Array<ChangeInterface> => {
 }
 
 export const supportsSentience = (x: AllowedTypes): boolean => {
-    return Array.isArray(x) || x.constructor === Object;
+    return Array.isArray(x) || (x?.constructor === Object && x !== undefined && x !== null);
 }
 
 export const clearChanges = (x: AllowedTypes): void => {
