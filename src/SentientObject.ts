@@ -124,7 +124,11 @@ interface ChangeInterface {
 }
 
 export const getChanges = (x: AllowedTypes): Array<ChangeInterface> => {
-    if (x.constructor === Object && isSentient(x)) {
+    if (x === null) {
+        return [];
+    }
+
+    if (x?.constructor === Object && isSentient(x)) {
         const mem: ObjectMemory = x[memorySym];
         const changes: ChangeInterface[] = [];
 
@@ -153,7 +157,7 @@ export const getChanges = (x: AllowedTypes): Array<ChangeInterface> => {
 
         return changes;
 
-    } else if (x.constructor === Array && isSentient(x)) {
+    } else if (x?.constructor === Array && isSentient(x)) {
         const mem: ArrayMemory = (x as any)[memorySym];
         const changes: ChangeInterface[] = [];
 
