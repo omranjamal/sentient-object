@@ -1,6 +1,6 @@
 {
   "name": "sentient-object",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "description": "Objects that know and tell you what changed about itself.",
   "main": "dist/SentientObject.js",
   "repository": "https://github.com/Hedronium/SentientObject",

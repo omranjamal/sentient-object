@@ -3,7 +3,7 @@ const typeSym = Symbol('type');
 
 export interface AllowedObject extends Object {
     [key: string]: any;
-};
+}
 
 export type AllowedTypes = AllowedObject | Array<AllowedObject | any> | any;
 
@@ -19,108 +19,110 @@ type ArrayMemory = {
     length: number;
     updates: {
         [key: number]: any;
-    }
+    };
 };
-
 
 export const sentient = <INPUT extends AllowedTypes>(x: INPUT): INPUT => {
     if (Array.isArray(x)) {
-        const xPrime: (any)[] = x.map((item: any) => sentient(item));
+        const xPrime: any[] = x.map((item: any) => sentient(item));
         (xPrime as any)[typeSym] = 'array';
 
-        const mem: ArrayMemory = (xPrime as any)[memorySym] = {
+        const mem: ArrayMemory = ((xPrime as any)[memorySym] = {
             initialLength: x.length,
             length: x.length,
-            updates: {}
-        };
+            updates: {},
+        });
 
-        return new Proxy((<any>xPrime), {
-            set: (arr: Array<any>, key: number | string, val: any) => {
+        return new Proxy(
+            xPrime as any,
+            {
+                set: (arr: Array<any>, key: number | string, val: any) => {
+                    if (key === 'length') {
+                        mem.length = val;
+                        arr.length = val as number;
 
-                if (key === 'length') {
+                        return true;
+                    }
 
-                    mem.length = val;
-                    arr.length = <number>val;
+                    const i: number = key as number;
+
+                    mem.updates[i] = val;
+                    arr[i] = val;
 
                     return true;
-                }
+                },
+                deleteProperty: (arr: Array<any>, key: number): boolean => {
+                    if (!(key in arr)) {
+                        return false;
+                    }
 
-                const i: number = <number>key;
+                    mem.updates[key] = undefined;
+                    delete arr[key];
 
-                mem.updates[i] = val;
-                arr[i] = val;
-
-                return true;
-            },
-            deleteProperty: (arr: Array<any>, key: number): boolean => {
-                if (!(key in arr)) {
-                    return false;
-                }
-
-                mem.updates[key] = undefined;
-                delete arr[key];
-
-                return true;
-            }
-        } as any);
-
+                    return true;
+                },
+            } as any,
+        );
     } else if (x !== undefined && x !== null && x?.constructor === Object) {
-        const xPrime: any = {...(x as any)};
+        const xPrime: any = { ...(x as any) };
 
         xPrime[typeSym] = 'object';
 
-        const mem: ObjectMemory = xPrime[memorySym] = {};
+        const mem: ObjectMemory = (xPrime[memorySym] = {});
 
-        Object.keys(xPrime).forEach(key => {
+        Object.keys(xPrime).forEach((key) => {
             xPrime[key] = sentient((x as any)[key]);
         });
 
-        return new Proxy(xPrime as any, {
-            set: (obj: AllowedObject, key: string, val: any) => {
-                if (key in obj || key in mem) {
-                    if (obj[key] !== val) {
+        return new Proxy(
+            xPrime as any,
+            {
+                set: (obj: AllowedObject, key: string, val: any) => {
+                    if (key in obj || key in mem) {
+                        if (obj[key] !== val) {
+                            mem[key] = {
+                                action: 'updated',
+                                value: val,
+                            };
+                        }
+                    } else {
                         mem[key] = {
-                            action: 'updated',
-                            value: val
+                            action: 'added',
+                            value: val,
                         };
                     }
-                } else {
+
+                    obj[key] = val;
+
+                    return true;
+                },
+                deleteProperty: (obj: AllowedObject, key: number): boolean => {
+                    if (!(key in obj)) {
+                        return false;
+                    }
+
                     mem[key] = {
-                        action: 'added',
-                        value: val
+                        action: 'deleted',
                     };
-                }
 
-                obj[key] = val;
+                    delete obj[key];
 
-                return true;
-            },
-            deleteProperty: (obj: AllowedObject, key: number): boolean => {
-                if (!(key in obj)) {
-                    return false;
-                }
-
-                mem[key] = {
-                    action: 'deleted'
-                };
-
-                delete obj[key];
-
-                return true;
-            }
-        } as any);
+                    return true;
+                },
+            } as any,
+        );
     } else {
         return x;
     }
-}
+};
 
 export const isSentient = (x: Object): boolean => memorySym in x;
-export const getType = (x: Object): 'array' | 'object' => ((<any>x)[typeSym]);
+export const getType = (x: Object): 'array' | 'object' => (x as any)[typeSym];
 
 interface ChangeInterface {
     action: 'add' | 'delete' | 'truncate' | 'update';
-    key: Array<string>,
-    value?:any;
+    key: Array<string>;
+    value?: any;
 }
 
 export const getChanges = (x: AllowedTypes): Array<ChangeInterface> => {
@@ -136,13 +138,13 @@ export const getChanges = (x: AllowedTypes): Array<ChangeInterface> => {
             const val = mem[key];
 
             changes.push({
-                action: <'delete' | 'add' | 'update'>({
+                action: {
                     deleted: 'delete',
-                    added: 'add',
-                    updated: 'update'
-                }[val.action]),
+                    added: 'update',
+                    updated: 'update',
+                }[val.action] as 'delete' | 'add' | 'update',
                 key: [key],
-                value: val.value
+                value: val.value,
             });
         });
 
@@ -156,7 +158,6 @@ export const getChanges = (x: AllowedTypes): Array<ChangeInterface> => {
         });
 
         return changes;
-
     } else if (x?.constructor === Array && isSentient(x)) {
         const mem: ArrayMemory = (x as any)[memorySym];
         const changes: ChangeInterface[] = [];
@@ -165,25 +166,24 @@ export const getChanges = (x: AllowedTypes): Array<ChangeInterface> => {
             changes.push({
                 action: 'truncate',
                 key: [],
-                value: mem.length
+                value: mem.length,
             });
         }
 
-        Object
-            .keys(mem.updates)
-            .map(key => parseInt(key))
-            .forEach(i => {
+        Object.keys(mem.updates)
+            .map((key) => parseInt(key))
+            .forEach((i) => {
                 if (i >= mem.initialLength && mem.length > mem.initialLength) {
                     changes.push({
                         action: 'add',
                         key: [],
-                        value: mem.updates[i]
+                        value: mem.updates[i],
                     });
                 } else if (i < mem.initialLength && i < mem.length) {
                     changes.push({
                         action: 'update',
                         key: [`${i}`],
-                        value: mem.updates[i]
+                        value: mem.updates[i],
                     });
                 }
             });
@@ -199,15 +199,17 @@ export const getChanges = (x: AllowedTypes): Array<ChangeInterface> => {
     } else {
         return [];
     }
-}
+};
 
 export const supportsSentience = (x: AllowedTypes): boolean => {
-    return Array.isArray(x) || (x?.constructor === Object && x !== undefined && x !== null);
-}
+    return (
+        Array.isArray(x) ||
+        (x?.constructor === Object && x !== undefined && x !== null)
+    );
+};
 
 export const clearChanges = (x: AllowedTypes): void => {
     if (Array.isArray(x) && isSentient(x)) {
-
         x.forEach((ele, i) => {
             clearChanges(ele);
 
@@ -216,13 +218,11 @@ export const clearChanges = (x: AllowedTypes): void => {
             }
         });
 
-        const mem: ArrayMemory = (<any>x)[memorySym];
+        const mem: ArrayMemory = (x as any)[memorySym];
         mem.length = mem.initialLength = x.length;
         mem.updates = {};
-
     } else if (x.constructor === Object && isSentient(x)) {
-
-        Object.keys(x).forEach(key => {
+        Object.keys(x).forEach((key) => {
             clearChanges(x[key]);
 
             if (supportsSentience(x[key]) && !isSentient(x[key])) {
@@ -230,9 +230,12 @@ export const clearChanges = (x: AllowedTypes): void => {
             }
         });
 
-        (<any>x)[memorySym] = {};
-
+        (x as any)[memorySym] = {};
     }
+};
+
+export function hasChanges(x: AllowedTypes) {
+    return getChanges(x).length > 0;
 }
 
 export default sentient;
