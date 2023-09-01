@@ -12,6 +12,6 @@
   "scripts": {
     "build": "tsc",
     "build:watch": "tsc --watch",
-    "prepublishOnly": "yarn build"
+    "prepublishOnly": "pnpm build"
   }
 }
